@@ -1,6 +1,6 @@
 # Check for latest version here: https://hub.docker.com/_/buildpack-deps?tab=tags&page=1&name=buster&ordering=last_updated
 # This is just a snapshot of buildpack-deps:buster that was last updated on 2019-12-28.
-FROM judge0/buildpack-deps:buster-2019-12-28
+FROM buildpack-deps:bookworm
 
 # Check for latest version here: https://gcc.gnu.org/releases.html, https://ftpmirror.gnu.org/gcc
 ENV GCC_VERSIONS \
@@ -129,25 +129,6 @@ RUN set -xe && \
       rm -rf /tmp/*; \
     done
 
-# Check for latest version here: https://www.haskell.org/ghc/download.html
-ENV HASKELL_VERSIONS \
-      8.8.1
-RUN set -xe && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends libgmp-dev libtinfo5 && \
-    rm -rf /var/lib/apt/lists/* && \
-    for VERSION in $HASKELL_VERSIONS; do \
-      curl -fSsL "https://downloads.haskell.org/~ghc/$VERSION/ghc-$VERSION-x86_64-deb8-linux.tar.xz" -o /tmp/ghc-$VERSION.tar.xz && \
-      mkdir /tmp/ghc-$VERSION && \
-      tar -xf /tmp/ghc-$VERSION.tar.xz -C /tmp/ghc-$VERSION --strip-components=1 && \
-      rm /tmp/ghc-$VERSION.tar.xz && \
-      cd /tmp/ghc-$VERSION && \
-      ./configure \
-        --prefix=/usr/local/ghc-$VERSION && \
-      make -j$(nproc) install && \
-      rm -rf /tmp/*; \
-    done
-
 # Check for latest version here: https://www.mono-project.com/download/stable
 ENV MONO_VERSIONS \
       6.6.0.161
@@ -182,41 +163,6 @@ RUN set -xe && \
         --prefix=/usr/local/node-$VERSION && \
       make -j$(nproc) && \
       make -j$(nproc) install && \
-      rm -rf /tmp/*; \
-    done
-
-# Check for latest version here: https://github.com/erlang/otp/releases
-ENV ERLANG_VERSIONS \
-      22.2
-RUN set -xe && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends unzip && \
-    rm -rf /var/lib/apt/lists/* && \
-    for VERSION in $ERLANG_VERSIONS; do \
-      curl -fSsL "https://github.com/erlang/otp/archive/OTP-$VERSION.tar.gz" -o /tmp/erlang-$VERSION.tar.gz && \
-      mkdir /tmp/erlang-$VERSION && \
-      tar -xf /tmp/erlang-$VERSION.tar.gz -C /tmp/erlang-$VERSION --strip-components=1 && \
-      rm /tmp/erlang-$VERSION.tar.gz && \
-      cd /tmp/erlang-$VERSION && \
-      ./otp_build autoconf && \
-      ./configure \
-        --prefix=/usr/local/erlang-$VERSION && \
-      make -j$(nproc) && \
-      make -j$(nproc) install && \
-      rm -rf /tmp/*; \
-    done; \
-    ln -s /usr/local/erlang-22.2/bin/erl /usr/local/bin/erl
-
-# Check for latest version here: https://github.com/elixir-lang/elixir/releases
-ENV ELIXIR_VERSIONS \
-      1.9.4
-RUN set -xe && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends unzip && \
-    rm -rf /var/lib/apt/lists/* && \
-    for VERSION in $ELIXIR_VERSIONS; do \
-      curl -fSsL "https://github.com/elixir-lang/elixir/releases/download/v$VERSION/Precompiled.zip" -o /tmp/elixir-$VERSION.zip && \
-      unzip -d /usr/local/elixir-$VERSION /tmp/elixir-$VERSION.zip && \
       rm -rf /tmp/*; \
     done
 
@@ -258,23 +204,6 @@ RUN set -xe && \
       rm -rf /tmp/*; \
     done
 
-# Check for latest version here: https://github.com/ocaml/ocaml/releases
-ENV OCAML_VERSIONS \
-      4.09.0
-RUN set -xe && \
-    for VERSION in $OCAML_VERSIONS; do \
-      curl -fSsL "https://github.com/ocaml/ocaml/archive/$VERSION.tar.gz" -o /tmp/ocaml-$VERSION.tar.gz && \
-      mkdir /tmp/ocaml-$VERSION && \
-      tar -xf /tmp/ocaml-$VERSION.tar.gz -C /tmp/ocaml-$VERSION --strip-components=1 && \
-      rm /tmp/ocaml-$VERSION.tar.gz && \
-      cd /tmp/ocaml-$VERSION && \
-      ./configure \
-        -prefix /usr/local/ocaml-$VERSION \
-        --disable-ocamldoc --disable-debugger && \
-      make -j$(nproc) world.opt && \
-      make -j$(nproc) install && \
-      rm -rf /tmp/*; \
-    done
 
 # Check for latest version here: https://www.php.net/downloads
 ENV PHP_VERSIONS \
@@ -308,18 +237,6 @@ RUN set -xe && \
       rm -rf /usr/local/d-$VERSION/linux/*32 && \
       rm -rf /tmp/*; \
     done
-
-# Check for latest version here: https://www.lua.org/download.html
-ENV LUA_VERSIONS \
-      5.3.5
-RUN set -xe && \
-    for VERSION in $LUA_VERSIONS; do \
-      curl -fSsL "https://downloads.sourceforge.net/project/luabinaries/$VERSION/Tools%20Executables/lua-${VERSION}_Linux44_64_bin.tar.gz" -o /tmp/lua-$VERSION.tar.gz && \
-      mkdir /usr/local/lua-$VERSION && \
-      tar -xf /tmp/lua-$VERSION.tar.gz -C /usr/local/lua-$VERSION && \
-      rm -rf /tmp/*; \
-    done; \
-    ln -s /lib/x86_64-linux-gnu/libreadline.so.7 /lib/x86_64-linux-gnu/libreadline.so.6
 
 # Check for latest version here: https://github.com/microsoft/TypeScript/releases
 ENV TYPESCRIPT_VERSIONS \
@@ -387,23 +304,6 @@ RUN set -xe && \
       rm -rf /tmp/*; \
     done
 
-# Check for latest version here: https://ftp.gnu.org/gnu/gnucobol
-ENV COBOL_VERSIONS \
-      2.2
-RUN set -xe && \
-    for VERSION in $COBOL_VERSIONS; do \
-      curl -fSsL "https://ftp.gnu.org/gnu/gnucobol/gnucobol-$VERSION.tar.xz" -o /tmp/gnucobol-$VERSION.tar.xz && \
-      mkdir /tmp/gnucobol-$VERSION && \
-      tar -xf /tmp/gnucobol-$VERSION.tar.xz -C /tmp/gnucobol-$VERSION --strip-components=1 && \
-      rm /tmp/gnucobol-$VERSION.tar.xz && \
-      cd /tmp/gnucobol-$VERSION && \
-      ./configure \
-        --prefix=/usr/local/gnucobol-$VERSION && \
-      make -j$(nproc) && \
-      make -j$(nproc) install && \
-      rm -rf /tmp/*; \
-    done
-
 # Check for latest version here: https://swift.org/download
 ENV SWIFT_VERSIONS \
       5.2.3
@@ -457,26 +357,6 @@ RUN set -xe && \
     apt-get update && \
     apt-get install -y --no-install-recommends clang-7 gnustep-devel && \
     rm -rf /var/lib/apt/lists/*
-
-# Check for latest version here: https://cloud.r-project.org/src/base
-ENV R_VERSIONS \
-      4.0.0
-RUN set -xe && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends libpcre2-dev && \
-    rm -rf /var/lib/apt/lists/* && \
-    for VERSION in $R_VERSIONS; do \
-      curl -fSsL "https://cloud.r-project.org/src/base/R-4/R-$VERSION.tar.gz" -o /tmp/r-$VERSION.tar.gz && \
-      mkdir /tmp/r-$VERSION && \
-      tar -xf /tmp/r-$VERSION.tar.gz -C /tmp/r-$VERSION --strip-components=1 && \
-      rm /tmp/r-$VERSION.tar.gz && \
-      cd /tmp/r-$VERSION && \
-      ./configure \
-        --prefix=/usr/local/r-$VERSION && \
-      make -j$(nproc) && \
-      make -j$(nproc) install && \
-      rm -rf /tmp/*; \
-    done
 
 # Check for latest version here: https://packages.debian.org/buster/sqlite3
 # Used for support of SQLite.
