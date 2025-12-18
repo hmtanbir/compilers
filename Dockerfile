@@ -2,428 +2,239 @@
 # This is just a snapshot of buildpack-deps:buster that was last updated on 2019-12-28.
 FROM buildpack-deps:bookworm
 
-# Check for latest version here: https://gcc.gnu.org/releases.html, https://ftpmirror.gnu.org/gcc
-ENV GCC_VERSIONS \
-      7.4.0 \
-      8.3.0 \
-      9.2.0
-RUN set -xe && \
-    for VERSION in $GCC_VERSIONS; do \
-      curl -fSsL "https://ftpmirror.gnu.org/gcc/gcc-$VERSION/gcc-$VERSION.tar.gz" -o /tmp/gcc-$VERSION.tar.gz && \
-      mkdir /tmp/gcc-$VERSION && \
-      tar -xf /tmp/gcc-$VERSION.tar.gz -C /tmp/gcc-$VERSION --strip-components=1 && \
-      rm /tmp/gcc-$VERSION.tar.gz && \
-      cd /tmp/gcc-$VERSION && \
-      ./contrib/download_prerequisites && \
-      { rm *.tar.* || true; } && \
-      tmpdir="$(mktemp -d)" && \
-      cd "$tmpdir"; \
-      if [ $VERSION = "9.2.0" ]; then \
-        ENABLE_FORTRAN=",fortran"; \
-      else \
-        ENABLE_FORTRAN=""; \
-      fi; \
-      /tmp/gcc-$VERSION/configure \
-        --disable-multilib \
-        --enable-languages=c,c++$ENABLE_FORTRAN \
-        --prefix=/usr/local/gcc-$VERSION && \
-      make -j$(nproc) && \
-      make -j$(nproc) install-strip && \
-      rm -rf /tmp/*; \
-    done
+LABEL maintainer="Judge0"
+LABEL description="Judge0 compilers with modern language versions"
 
-# Check for latest version here: https://www.ruby-lang.org/en/downloads
-ENV RUBY_VERSIONS \
-      2.7.0
-RUN set -xe && \
-    for VERSION in $RUBY_VERSIONS; do \
-      curl -fSsL "https://cache.ruby-lang.org/pub/ruby/${VERSION%.*}/ruby-$VERSION.tar.gz" -o /tmp/ruby-$VERSION.tar.gz && \
-      mkdir /tmp/ruby-$VERSION && \
-      tar -xf /tmp/ruby-$VERSION.tar.gz -C /tmp/ruby-$VERSION --strip-components=1 && \
-      rm /tmp/ruby-$VERSION.tar.gz && \
-      cd /tmp/ruby-$VERSION && \
-      ./configure \
-        --disable-install-doc \
-        --prefix=/usr/local/ruby-$VERSION && \
-      make -j$(nproc) && \
-      make -j$(nproc) install && \
-      rm -rf /tmp/*; \
-    done
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG=C.UTF-8
 
-# Check for latest version here: https://www.python.org/downloads
-ENV PYTHON_VERSIONS \
-      3.8.1 \
-      2.7.17
-RUN set -xe && \
-    for VERSION in $PYTHON_VERSIONS; do \
-      curl -fSsL "https://www.python.org/ftp/python/$VERSION/Python-$VERSION.tar.xz" -o /tmp/python-$VERSION.tar.xz && \
-      mkdir /tmp/python-$VERSION && \
-      tar -xf /tmp/python-$VERSION.tar.xz -C /tmp/python-$VERSION --strip-components=1 && \
-      rm /tmp/python-$VERSION.tar.xz && \
-      cd /tmp/python-$VERSION && \
-      ./configure \
-        --prefix=/usr/local/python-$VERSION && \
-      make -j$(nproc) && \
-      make -j$(nproc) install && \
-      rm -rf /tmp/*; \
-    done
+# ------------------------------------------------------------
+# System essentials
+# ------------------------------------------------------------
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    wget \
+    gnupg \
+    software-properties-common \
+    unzip \
+    xz-utils \
+    pkg-config \
+    git \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-# Check for latest version here: https://ftp.gnu.org/gnu/octave
-ENV OCTAVE_VERSIONS \
-      5.1.0
-RUN set -xe && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends gfortran libblas-dev liblapack-dev libpcre3-dev && \
-    rm -rf /var/lib/apt/lists/* && \
-    for VERSION in $OCTAVE_VERSIONS; do \
-      curl -fSsL "https://ftp.gnu.org/gnu/octave/octave-$VERSION.tar.gz" -o /tmp/octave-$VERSION.tar.gz && \
-      mkdir /tmp/octave-$VERSION && \
-      tar -xf /tmp/octave-$VERSION.tar.gz -C /tmp/octave-$VERSION --strip-components=1 && \
-      rm /tmp/octave-$VERSION.tar.gz && \
-      cd /tmp/octave-$VERSION && \
-      ./configure \
-        --prefix=/usr/local/octave-$VERSION && \
-      make -j$(nproc) && \
-      make -j$(nproc) install && \
-      rm -rf /tmp/*; \
-    done
+# ============================================================
+# C / C++ — GCC 14 (source build)
+# ============================================================
 
-# Check for latest version here: https://jdk.java.net
-RUN set -xe && \
-    curl -fSsL "https://download.java.net/java/GA/jdk13.0.1/cec27d702aa74d5a8630c65ae61e4305/9/GPL/openjdk-13.0.1_linux-x64_bin.tar.gz" -o /tmp/openjdk13.tar.gz && \
-    mkdir /usr/local/openjdk13 && \
-    tar -xf /tmp/openjdk13.tar.gz -C /usr/local/openjdk13 --strip-components=1 && \
-    rm /tmp/openjdk13.tar.gz && \
-    ln -s /usr/local/openjdk13/bin/javac /usr/local/bin/javac && \
-    ln -s /usr/local/openjdk13/bin/java /usr/local/bin/java && \
-    ln -s /usr/local/openjdk13/bin/jar /usr/local/bin/jar
+RUN apt-get update && apt-get install -y \
+    flex \
+    bison \
+    libgmp-dev \
+    libmpc-dev \
+    libmpfr-dev \
+    texinfo \
+    && rm -rf /var/lib/apt/lists/*
 
-# Check for latest version here: https://ftpmirror.gnu.org/bash
-ENV BASH_VERSIONS \
-      5.0
-RUN set -xe && \
-    for VERSION in $BASH_VERSIONS; do \
-      curl -fSsL "https://ftpmirror.gnu.org/bash/bash-$VERSION.tar.gz" -o /tmp/bash-$VERSION.tar.gz && \
-      mkdir /tmp/bash-$VERSION && \
-      tar -xf /tmp/bash-$VERSION.tar.gz -C /tmp/bash-$VERSION --strip-components=1 && \
-      rm /tmp/bash-$VERSION.tar.gz && \
-      cd /tmp/bash-$VERSION && \
-      ./configure \
-        --prefix=/usr/local/bash-$VERSION && \
-      make -j$(nproc) && \
-      make -j$(nproc) install && \
-      rm -rf /tmp/*; \
-    done
+WORKDIR /tmp
 
-# Check for latest version here: https://www.freepascal.org/download.html
-ENV FPC_VERSIONS \
-      3.0.4
-RUN set -xe && \
-    for VERSION in $FPC_VERSIONS; do \
-      curl -fSsL "ftp://ftp.freepascal.org/fpc/dist/$VERSION/x86_64-linux/fpc-$VERSION.x86_64-linux.tar" -o /tmp/fpc-$VERSION.tar && \
-      mkdir /tmp/fpc-$VERSION && \
-      tar -xf /tmp/fpc-$VERSION.tar -C /tmp/fpc-$VERSION --strip-components=1 && \
-      rm /tmp/fpc-$VERSION.tar && \
-      cd /tmp/fpc-$VERSION && \
-      echo "/usr/local/fpc-$VERSION" | sh install.sh && \
-      rm -rf /tmp/*; \
-    done
+RUN wget https://ftp.gnu.org/gnu/gcc/gcc-14.1.0/gcc-14.1.0.tar.xz && \
+    tar -xf gcc-14.1.0.tar.xz && \
+    cd gcc-14.1.0 && \
+    ./contrib/download_prerequisites && \
+    mkdir build && cd build && \
+    ../configure \
+      --disable-multilib \
+      --enable-languages=c,c++ \
+      --prefix=/opt/gcc-14 && \
+    make -j$(nproc) && \
+    make install && \
+    cd / && rm -rf /tmp/gcc-14.1.0*
 
-# Check for latest version here: https://www.mono-project.com/download/stable
-ENV MONO_VERSIONS \
-      6.6.0.161
-RUN set -xe && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends cmake && \
-    rm -rf /var/lib/apt/lists/* && \
-    for VERSION in $MONO_VERSIONS; do \
-      curl -fSsL "https://download.mono-project.com/sources/mono/mono-$VERSION.tar.xz" -o /tmp/mono-$VERSION.tar.xz && \
-      mkdir /tmp/mono-$VERSION && \
-      tar -xf /tmp/mono-$VERSION.tar.xz -C /tmp/mono-$VERSION --strip-components=1 && \
-      rm /tmp/mono-$VERSION.tar.xz && \
-      cd /tmp/mono-$VERSION && \
-      ./configure \
-        --prefix=/usr/local/mono-$VERSION && \
-      make -j$(nproc) && \
-      make -j$(proc) install && \
-      rm -rf /tmp/*; \
-    done
+RUN update-alternatives --install /usr/bin/gcc gcc /opt/gcc-14/bin/gcc 100 && \
+    update-alternatives --install /usr/bin/g++ g++ /opt/gcc-14/bin/g++ 100
 
-# Check for latest version here: https://nodejs.org/en
-ENV NODE_VERSIONS \
-      12.14.0
-RUN set -xe && \
-    for VERSION in $NODE_VERSIONS; do \
-      curl -fSsL "https://nodejs.org/dist/v$VERSION/node-v$VERSION.tar.gz" -o /tmp/node-$VERSION.tar.gz && \
-      mkdir /tmp/node-$VERSION && \
-      tar -xf /tmp/node-$VERSION.tar.gz -C /tmp/node-$VERSION --strip-components=1 && \
-      rm /tmp/node-$VERSION.tar.gz && \
-      cd /tmp/node-$VERSION && \
-      ./configure \
-        --prefix=/usr/local/node-$VERSION && \
-      make -j$(nproc) && \
-      make -j$(nproc) install && \
-      rm -rf /tmp/*; \
-    done
+ENV LD_LIBRARY_PATH="/opt/gcc-14/lib64"
 
-# Check for latest version here: https://www.rust-lang.org
-ENV RUST_VERSIONS \
-      1.40.0
-RUN set -xe && \
-    for VERSION in $RUST_VERSIONS; do \
-      curl -fSsL "https://static.rust-lang.org/dist/rust-$VERSION-x86_64-unknown-linux-gnu.tar.gz" -o /tmp/rust-$VERSION.tar.gz && \
-      mkdir /tmp/rust-$VERSION && \
-      tar -xf /tmp/rust-$VERSION.tar.gz -C /tmp/rust-$VERSION --strip-components=1 && \
-      rm /tmp/rust-$VERSION.tar.gz && \
-      cd /tmp/rust-$VERSION && \
-      ./install.sh \
-        --prefix=/usr/local/rust-$VERSION \
-        --components=rustc,rust-std-x86_64-unknown-linux-gnu && \
-      rm -rf /tmp/*; \
-    done
+# ============================================================
+# Java — OpenJDK 25 (Adoptium)
+# ============================================================
 
-# Check for latest version here: https://golang.org/dl
-ENV GO_VERSIONS \
-      1.13.5
-RUN set -xe && \
-    for VERSION in $GO_VERSIONS; do \
-      curl -fSsL "https://storage.googleapis.com/golang/go$VERSION.linux-amd64.tar.gz" -o /tmp/go-$VERSION.tar.gz && \
-      mkdir /usr/local/go-$VERSION && \
-      tar -xf /tmp/go-$VERSION.tar.gz -C /usr/local/go-$VERSION --strip-components=1 && \
-      rm -rf /tmp/*; \
-    done
+RUN wget -qO- https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor -o /usr/share/keyrings/adoptium.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb bookworm main" \
+    > /etc/apt/sources.list.d/adoptium.list
 
-# Check for latest version here: https://sourceforge.net/projects/fbc/files/Binaries%20-%20Linux
-ENV FBC_VERSIONS \
-      1.07.1
-RUN set -xe && \
-    for VERSION in $FBC_VERSIONS; do \
-      curl -fSsL "https://downloads.sourceforge.net/project/fbc/Binaries%20-%20Linux/FreeBASIC-$VERSION-linux-x86_64.tar.gz" -o /tmp/fbc-$VERSION.tar.gz && \
-      mkdir /usr/local/fbc-$VERSION && \
-      tar -xf /tmp/fbc-$VERSION.tar.gz -C /usr/local/fbc-$VERSION --strip-components=1 && \
-      rm -rf /tmp/*; \
-    done
+RUN apt-get update && apt-get install -y \
+    temurin-25-jdk \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV JAVA_HOME=/usr/lib/jvm/temurin-25-jdk-amd64
+ENV PATH="$JAVA_HOME/bin:$PATH"
+
+# ============================================================
+# Python
+#   - Python 2.7.18 (legacy)
+#   - Python 3.11
+# ============================================================
+
+# Python 2.7.18 (build from source)
+RUN wget https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tgz && \
+    tar -xzf Python-2.7.18.tgz && \
+    cd Python-2.7.18 && \
+    ./configure --enable-optimizations && \
+    make -j$(nproc) && \
+    make install && \
+    cd / && rm -rf Python-2.7.18*
+
+# ============================================================
+# Python 3.11 (with venv for user execution)
+# ============================================================
+
+RUN apt-get update && apt-get install -y \
+    python3.11 \
+    python3.11-dev \
+    python3.11-venv \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create virtual environment for Judge0 Python execution
+RUN python3.11 -m venv /opt/python3.11
+
+# Install common libraries inside venv
+RUN /opt/python3.11/bin/pip install --no-cache-dir \
+    numpy \
+    scipy \
+    pandas
+
+# ============================================================
+# C# — .NET 9 SDK (C# 13)
+# ============================================================
+
+ENV DOTNET_ROOT=/opt/dotnet
+ENV PATH="$DOTNET_ROOT:$PATH"
+
+RUN mkdir -p /opt/dotnet && \
+    curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh && \
+    chmod +x /tmp/dotnet-install.sh && \
+    /tmp/dotnet-install.sh \
+      --channel 9.0 \
+      --install-dir /opt/dotnet && \
+    rm /tmp/dotnet-install.sh
+
+# ============================================================
+# JavaScript / TypeScript — Node.js 22.21.0
+# ============================================================
+
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+
+RUN apt-get update && apt-get install -y \
+    nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN npm install -g \
+    typescript@5.7.3
+
+# ============================================================
+# Ruby — 3.2.x (source build)
+# ============================================================
+
+RUN apt-get update && apt-get install -y \
+    libssl-dev \
+    libreadline-dev \
+    zlib1g-dev \
+    libyaml-dev \
+    libffi-dev \
+    libgdbm-dev \
+    libncurses5-dev \
+    libncursesw5-dev \
+    libdb-dev \
+    uuid-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /tmp
+
+ARG RUBY_VERSION=3.2.4
+
+RUN wget https://cache.ruby-lang.org/pub/ruby/3.2/ruby-${RUBY_VERSION}.tar.gz && \
+    tar -xzf ruby-${RUBY_VERSION}.tar.gz && \
+    cd ruby-${RUBY_VERSION} && \
+    ./configure --disable-install-doc && \
+    make -j$(nproc) && \
+    make install && \
+    cd / && rm -rf /tmp/ruby-${RUBY_VERSION}*
+
+# Ruby gems
+RUN gem update --system && \
+    gem install algorithms
 
 
-# Check for latest version here: https://www.php.net/downloads
-ENV PHP_VERSIONS \
-      7.4.1
-RUN set -xe && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends bison re2c && \
-    rm -rf /var/lib/apt/lists/* && \
-    for VERSION in $PHP_VERSIONS; do \
-      curl -fSsL "https://codeload.github.com/php/php-src/tar.gz/php-$VERSION" -o /tmp/php-$VERSION.tar.gz && \
-      mkdir /tmp/php-$VERSION && \
-      tar -xf /tmp/php-$VERSION.tar.gz -C /tmp/php-$VERSION --strip-components=1 && \
-      rm /tmp/php-$VERSION.tar.gz && \
-      cd /tmp/php-$VERSION && \
-      ./buildconf --force && \
-      ./configure \
-        --prefix=/usr/local/php-$VERSION && \
-      make -j$(nproc) && \
-      make -j$(nproc) install && \
-      rm -rf /tmp/*; \
-    done
+# ============================================================
+# Swift — 6.0
+# ============================================================
 
-# Check for latest version here: https://dlang.org/download.html#dmd
-ENV D_VERSIONS \
-      2.089.1
-RUN set -xe && \
-    for VERSION in $D_VERSIONS; do \
-      curl -fSsL "http://downloads.dlang.org/releases/2.x/$VERSION/dmd.$VERSION.linux.tar.xz" -o /tmp/d-$VERSION.tar.gz && \
-      mkdir /usr/local/d-$VERSION && \
-      tar -xf /tmp/d-$VERSION.tar.gz -C /usr/local/d-$VERSION --strip-components=1 && \
-      rm -rf /usr/local/d-$VERSION/linux/*32 && \
-      rm -rf /tmp/*; \
-    done
+WORKDIR /opt
 
-# Check for latest version here: https://github.com/microsoft/TypeScript/releases
-ENV TYPESCRIPT_VERSIONS \
-      3.7.4
-RUN set -xe && \
-    curl -fSsL "https://deb.nodesource.com/setup_12.x" | bash - && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends nodejs && \
-    rm -rf /var/lib/apt/lists/* && \
-    for VERSION in $TYPESCRIPT_VERSIONS; do \
-      npm install -g typescript@$VERSION; \
-    done
+RUN wget https://download.swift.org/swift-6.0-release/debian12/swift-6.0-RELEASE/swift-6.0-RELEASE-debian12.tar.gz && \
+    tar -xzf swift-6.0-RELEASE-debian12.tar.gz && \
+    rm swift-6.0-RELEASE-debian12.tar.gz
 
-# Check for latest version here: https://nasm.us
-ENV NASM_VERSIONS \
-      2.14.02
-RUN set -xe && \
-    for VERSION in $NASM_VERSIONS; do \
-      curl -fSsL "https://www.nasm.us/pub/nasm/releasebuilds/$VERSION/nasm-$VERSION.tar.gz" -o /tmp/nasm-$VERSION.tar.gz && \
-      mkdir /tmp/nasm-$VERSION && \
-      tar -xf /tmp/nasm-$VERSION.tar.gz -C /tmp/nasm-$VERSION --strip-components=1 && \
-      rm /tmp/nasm-$VERSION.tar.gz && \
-      cd /tmp/nasm-$VERSION && \
-      ./configure \
-        --prefix=/usr/local/nasm-$VERSION && \
-      make -j$(nproc) nasm ndisasm && \
-      make -j$(nproc) strip && \
-      make -j$(nproc) install && \
-      echo "/usr/local/nasm-$VERSION/bin/nasm -o main.o \$@ && ld main.o" >> /usr/local/nasm-$VERSION/bin/nasmld && \
-      chmod +x /usr/local/nasm-$VERSION/bin/nasmld && \
-      rm -rf /tmp/*; \
-    done
+ENV PATH="/opt/swift-6.0-RELEASE/usr/bin:$PATH"
 
-# Check for latest version here: http://gprolog.org/#download
-ENV GPROLOG_VERSIONS \
-      1.4.5
-RUN set -xe && \
-    for VERSION in $GPROLOG_VERSIONS; do \
-      curl -fSsL "http://gprolog.org/gprolog-$VERSION.tar.gz" -o /tmp/gprolog-$VERSION.tar.gz && \
-      mkdir /tmp/gprolog-$VERSION && \
-      tar -xf /tmp/gprolog-$VERSION.tar.gz -C /tmp/gprolog-$VERSION --strip-components=1 && \
-      rm /tmp/gprolog-$VERSION.tar.gz && \
-      cd /tmp/gprolog-$VERSION/src && \
-      ./configure \
-        --prefix=/usr/local/gprolog-$VERSION && \
-      make -j$(nproc) && \
-      make -j$(nproc) install-strip && \
-      rm -rf /tmp/*; \
-    done
+# ============================================================
+# Go — Latest Stable (>=1.22)
+# ============================================================
 
-# Check for latest version here: http://www.sbcl.org/platform-table.html
-ENV SBCL_VERSIONS \
-      2.0.0
-RUN set -xe && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends bison re2c && \
-    rm -rf /var/lib/apt/lists/* && \
-    for VERSION in $SBCL_VERSIONS; do \
-      curl -fSsL "https://downloads.sourceforge.net/project/sbcl/sbcl/$VERSION/sbcl-$VERSION-x86-64-linux-binary.tar.bz2" -o /tmp/sbcl-$VERSION.tar.bz2 && \
-      mkdir /tmp/sbcl-$VERSION && \
-      tar -xf /tmp/sbcl-$VERSION.tar.bz2 -C /tmp/sbcl-$VERSION --strip-components=1 && \
-      cd /tmp/sbcl-$VERSION && \
-      export INSTALL_ROOT=/usr/local/sbcl-$VERSION && \
-      sh install.sh && \
-      rm -rf /tmp/*; \
-    done
+ENV GOROOT=/usr/local/go
+ENV GOPATH=/opt/go
+ENV PATH="$GOROOT/bin:$GOPATH/bin:$PATH"
 
-# Check for latest version here: https://swift.org/download
-ENV SWIFT_VERSIONS \
-      5.2.3
-RUN set -xe && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends libncurses5 && \
-    rm -rf /var/lib/apt/lists/* && \
-    for VERSION in $SWIFT_VERSIONS; do \
-      curl -fSsL "https://swift.org/builds/swift-$VERSION-release/ubuntu1804/swift-$VERSION-RELEASE/swift-$VERSION-RELEASE-ubuntu18.04.tar.gz" -o /tmp/swift-$VERSION.tar.gz && \
-      mkdir /usr/local/swift-$VERSION && \
-      tar -xf /tmp/swift-$VERSION.tar.gz -C /usr/local/swift-$VERSION --strip-components=2 && \
-      rm -rf /tmp/*; \
-    done
+WORKDIR /tmp
 
-# Check for latest version here: https://kotlinlang.org
-ENV KOTLIN_VERSIONS \
-      1.3.70
-RUN set -xe && \
-    for VERSION in $KOTLIN_VERSIONS; do \
-      curl -fSsL "https://github.com/JetBrains/kotlin/releases/download/v$VERSION/kotlin-compiler-$VERSION.zip" -o /tmp/kotlin-$VERSION.zip && \
-      unzip -d /usr/local/kotlin-$VERSION /tmp/kotlin-$VERSION.zip && \
-      mv /usr/local/kotlin-$VERSION/kotlinc/* /usr/local/kotlin-$VERSION/ && \
-      rm -rf /usr/local/kotlin-$VERSION/kotlinc && \
-      rm -rf /tmp/*; \
-    done
+RUN curl -fsSL https://go.dev/dl/?mode=json | \
+    grep -Eo 'go[0-9]+\.[0-9]+\.[0-9]+\.linux-amd64\.tar\.gz' | \
+    head -n 1 | \
+    xargs -I {} wget https://dl.google.com/go/{} && \
+    tar -C /usr/local -xzf go*.linux-amd64.tar.gz && \
+    rm go*.linux-amd64.tar.gz
 
-# Check for latest version here: https://hub.docker.com/_/mono
-# I currently use this to add support for Visual Basic.Net but this can be also
-# used to support C# language which has been already supported but with manual
-# installation of Mono (see above).
-ENV MONO_VERSION 6.6.0.161
-RUN set -xe && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends gnupg dirmngr && \
-    rm -rf /var/lib/apt/lists/* && \
-    export GNUPGHOME="$(mktemp -d)" && \
-    gpg --batch --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && \
-    gpg --batch --export --armor 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF > /etc/apt/trusted.gpg.d/mono.gpg.asc && \
-    gpgconf --kill all && \
-    rm -rf "$GNUPGHOME" && \
-    apt-key list | grep Xamarin && \
-    apt-get purge -y --auto-remove gnupg dirmngr && \
-    echo "deb http://download.mono-project.com/repo/debian stable-stretch/snapshots/$MONO_VERSION main" > /etc/apt/sources.list.d/mono-official-stable.list && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends mono-vbnc && \
-    rm -rf /var/lib/apt/lists/* /tmp/*
+# ============================================================
+# Kotlin — 2.1.10
+# ============================================================
 
-# Check for latest version here: https://packages.debian.org/buster/clang-7
-# Used for additional compilers for C, C++ and used for Objective-C.
-RUN set -xe && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends clang-7 gnustep-devel && \
-    rm -rf /var/lib/apt/lists/*
+WORKDIR /opt
 
-# Check for latest version here: https://packages.debian.org/buster/sqlite3
-# Used for support of SQLite.
-RUN set -xe && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends sqlite3 && \
-    rm -rf /var/lib/apt/lists/*
+RUN wget https://github.com/JetBrains/kotlin/releases/download/v2.1.10/kotlin-compiler-2.1.10.zip && \
+    unzip kotlin-compiler-2.1.10.zip && \
+    rm kotlin-compiler-2.1.10.zip
 
-# Check for latest version here: https://scala-lang.org
-ENV SCALA_VERSIONS \
-      2.13.2
-RUN set -xe && \
-    for VERSION in $SCALA_VERSIONS; do \
-      curl -fSsL "https://downloads.lightbend.com/scala/$VERSION/scala-$VERSION.tgz" -o /tmp/scala-$VERSION.tgz && \
-      mkdir /usr/local/scala-$VERSION && \
-      tar -xf /tmp/scala-$VERSION.tgz -C /usr/local/scala-$VERSION --strip-components=1 && \
-      rm -rf /tmp/*; \
-    done
+ENV PATH="/opt/kotlinc/bin:$PATH"
 
-# Support for Perl came "for free" since it is already installed.
+# ============================================================
+# Rust — 1.88.0 (Edition 2024)
+# ============================================================
 
-# Check for latest version here: https://github.com/clojure/clojure/releases
-ENV CLOJURE_VERSION 1.10.1
-RUN set -xe && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends maven && \
-    cd /tmp && \
-    git clone https://github.com/clojure/clojure && \
-    cd clojure && \
-    git checkout clojure-$CLOJURE_VERSION && \
-    mvn -Plocal -Dmaven.test.skip=true package && \
-    mkdir /usr/local/clojure-$CLOJURE_VERSION && \
-    cp clojure.jar /usr/local/clojure-$CLOJURE_VERSION && \
-    apt-get remove --purge -y maven && \
-    rm -rf /var/lib/apt/lists/* /tmp/*
+ENV RUSTUP_HOME=/opt/rustup
+ENV CARGO_HOME=/opt/cargo
+ENV PATH="/opt/cargo/bin:$PATH"
 
-# Check for latest version here: https://github.com/dotnet/sdk/releases
-RUN set -xe && \
-    curl -fSsL "https://download.visualstudio.microsoft.com/download/pr/7d4c708b-38db-48b2-8532-9fc8a3ab0e42/23229fd17482119822bd9261b3570d87/dotnet-sdk-3.1.202-linux-x64.tar.gz" -o /tmp/dotnet.tar.gz && \
-    mkdir /usr/local/dotnet-sdk && \
-    tar -xf /tmp/dotnet.tar.gz -C /usr/local/dotnet-sdk && \
-    rm -rf /tmp/*
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
+    rustup toolchain install 1.88.0 && \
+    rustup default 1.88.0
 
-# Check for latest version here: https://groovy.apache.org/download.html
-RUN set -xe && \
-    curl -fSsL "https://dl.bintray.com/groovy/maven/apache-groovy-binary-3.0.3.zip" -o /tmp/groovy.zip && \
-    unzip /tmp/groovy.zip -d /usr/local && \
-    rm -rf /tmp/*
+# ============================================================
+# PHP — 8.2 (with bcmath)
+# ============================================================
 
-RUN set -xe && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends locales && \
-    rm -rf /var/lib/apt/lists/* && \
-    echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
-    locale-gen
-ENV LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8
+RUN apt-get update && apt-get install -y \
+    php8.2 \
+    php8.2-bcmath \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN set -xe && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends git libcap-dev && \
-    rm -rf /var/lib/apt/lists/* && \
-    git clone https://github.com/judge0/isolate.git /tmp/isolate && \
-    cd /tmp/isolate && \
-    git checkout ad39cc4d0fbb577fb545910095c9da5ef8fc9a1a && \
-    make -j$(nproc) install && \
-    rm -rf /tmp/*
-ENV BOX_ROOT /var/local/lib/isolate
+# ============================================================
+# Final cleanup
+# ============================================================
 
-LABEL maintainer="Herman Zvonimir Došilović <hermanz.dosilovic@gmail.com>"
-LABEL version="1.4.0"
+WORKDIR /
+
+RUN apt-get clean && rm -rf /tmp/* /var/tmp/*
