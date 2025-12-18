@@ -14,6 +14,7 @@ ENV LANG=C.UTF-8
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     curl \
+    clang \
     wget \
     gnupg \
     software-properties-common \
@@ -173,13 +174,18 @@ RUN gem update --system && \
 # Swift — 6.0
 # ============================================================
 
-WORKDIR /opt
+WORKDIR /tmp
 
-RUN wget https://download.swift.org/swift-6.0-release/debian12/swift-6.0-RELEASE/swift-6.0-RELEASE-debian12.tar.gz && \
-    tar -xzf swift-6.0-RELEASE-debian12.tar.gz && \
-    rm swift-6.0-RELEASE-debian12.tar.gz
+ENV SWIFT_VERSION=6.0
+ENV SWIFTROOT=/usr/local/swift
+ENV SWIFTPATH=/opt/swift
+ENV PATH="$SWIFTROOT/bin:$SWIFTPATH/bin:$PATH"
 
-ENV PATH="/opt/swift-6.0-RELEASE/usr/bin:$PATH"
+RUN wget https://download.swift.org/swift-${SWIFT_VERSION}-release/ubuntu2204/swift-${SWIFT_VERSION}-RELEASE/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04.tar.gz && \
+    tar -C /usr/local -xzf swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04.tar.gz && \
+    mv /usr/local/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr /usr/local/swift && \
+    rm -rf /usr/local/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04 && \
+    rm swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04.tar.gz
 
 # ============================================================
 # Go — Latest Stable (>=1.22)
