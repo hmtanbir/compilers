@@ -2,7 +2,7 @@
 # This is just a snapshot of buildpack-deps:buster that was last updated on 2019-12-28.
 FROM buildpack-deps:bookworm
 
-LABEL maintainer="Judge0"
+LABEL maintainer="Herman Zvonimir Došilović <hermanz.dosilovic@gmail.com>"
 LABEL description="Judge0 compilers with modern language versions"
 
 ENV DEBIAN_FRONTEND=noninteractive
