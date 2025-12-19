@@ -121,7 +121,9 @@ RUN mkdir -p /opt/dotnet && \
     /tmp/dotnet-install.sh \
       --channel 9.0 \
       --install-dir /opt/dotnet && \
-    rm /tmp/dotnet-install.sh
+    rm /tmp/dotnet-install.sh && \
+    dotnet tool install -g dotnet-script && \
+    export PATH="$PATH:/root/.dotnet/tools"
 
 # ============================================================
 # JavaScript / TypeScript — Node.js 22.21.0
