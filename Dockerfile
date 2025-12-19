@@ -182,10 +182,10 @@ ENV SWIFTPATH=/opt/swift
 ENV PATH="$SWIFTROOT/bin:$SWIFTPATH/bin:$PATH"
 
 RUN wget https://download.swift.org/swift-${SWIFT_VERSION}-release/debian12/swift-${SWIFT_VERSION}-RELEASE/swift-${SWIFT_VERSION}-RELEASE-debian12.tar.gz && \
-    tar -C /usr/local -xzf swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04.tar.gz && \
-    mv /usr/local/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr /usr/local/swift && \
-    rm -rf /usr/local/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04 && \
-    rm swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04.tar.gz
+    tar -C /usr/local -xzf swift-${SWIFT_VERSION}-RELEASE-debian12.tar.gz && \
+    mv /usr/local/swift-${SWIFT_VERSION}-RELEASE-debian12/usr /usr/local/swift && \
+    rm -rf /usr/local/swift-${SWIFT_VERSION}-RELEASE-debian12 && \
+    rm swift-${SWIFT_VERSION}-RELEASE-debian12.tar.gz
 
 # ============================================================
 # Go — Latest Stable (>=1.22)
