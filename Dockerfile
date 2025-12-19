@@ -113,17 +113,18 @@ RUN /opt/python3.11/bin/pip install --no-cache-dir \
 # ============================================================
 
 ENV DOTNET_ROOT=/opt/dotnet
-ENV PATH="$DOTNET_ROOT:$PATH"
+ENV PATH="${DOTNET_ROOT}:${DOTNET_ROOT}/tools:/root/.dotnet/tools:${PATH}"
 
 RUN mkdir -p /opt/dotnet && \
     curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh && \
     chmod +x /tmp/dotnet-install.sh && \
     /tmp/dotnet-install.sh \
-      --channel 9.0 \
-      --install-dir /opt/dotnet && \
+        --channel 9.0 \
+        --install-dir /opt/dotnet \
+        --no-path && \
     rm /tmp/dotnet-install.sh && \
-    dotnet tool install -g dotnet-script && \
-    export PATH="$PATH:/root/.dotnet/tools"
+    dotnet --version && \
+    dotnet tool install -g dotnet-script
 
 # ============================================================
 # JavaScript / TypeScript — Node.js 22.21.0
